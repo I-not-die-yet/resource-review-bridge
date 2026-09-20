@@ -50,29 +50,112 @@ flowchart LR
 
 The repository does not include Tunnel, Cloudflared, browser, or Codex binaries.
 
-## Local setup
+## Installation
 
-Install the browser dependency:
+These instructions set up a private, local developer-mode connection through [OpenAI Secure MCP Tunnel](https://developers.openai.com/api/docs/guides/secure-mcp-tunnels). Secure MCP Tunnel keeps the MCP server off the public internet. It is intended here for private use and testing, not public plugin distribution.
+
+### 1. Check the prerequisites
+
+You need:
+
+- macOS or another local environment that can run the scripts in this repository;
+- Python 3.9 or newer;
+- Node.js and npm;
+- an authenticated local Codex executable, or the ChatGPT macOS app with its bundled Codex executable;
+- ChatGPT developer mode access;
+- an OpenAI Platform tunnel with Tunnels Read + Use permission;
+- a Tunnel runtime API key.
+
+Creating or editing a tunnel requires Tunnels Read + Manage permission. ChatGPT developer mode and Platform tunnel permissions are separate.
+
+### 2. Download the project
+
+```bash
+git clone https://github.com/I-not-die-yet/resource-review-bridge.git
+cd resource-review-bridge
+```
+
+### 3. Install the browser dependency
 
 ```bash
 npm install
 npx playwright install chromium
 ```
 
-Run the MCP server directly:
+The repository has no third-party Python package dependency. Do not place API keys, Tunnel profiles, or other credentials inside the repository.
+
+### 4. Run the local tests
+
+```bash
+python3 -m unittest discover -s tests -v
+```
+
+All tests should pass before connecting the bridge to ChatGPT. The tests use fakes and temporary SQLite files; they do not access private accounts or the network.
+
+### 5. Confirm the MCP server starts
 
 ```bash
 python3 -m resource_review_bridge.server --stdio \
   --state ./work/resource-review-state.sqlite
 ```
 
-For a Secure MCP Tunnel profile, configure its stdio command as:
+The process waits for MCP input on standard input. Press `Control+C` after this smoke test.
 
-```text
-/absolute/path/to/resource-review-bridge/scripts/run-resource-review-mcp
+If Codex is not found automatically, set `RESOURCE_REVIEW_CODEX` to the executable path before starting the server. The supplied wrapper automatically checks the standard ChatGPT macOS app locations.
+
+### 6. Configure Secure MCP Tunnel
+
+Download the latest `tunnel-client` from [OpenAI Platform tunnel settings](https://platform.openai.com/settings/organization/tunnels) or the latest official `openai/tunnel-client` release. Keep the binary and its profile outside this repository.
+
+Start with the client's current built-in instructions:
+
+```bash
+/path/to/tunnel-client help quickstart
 ```
 
-The wrapper derives the repository location at runtime, creates local state under `work/`, and locates the Codex executable. Keep API keys and Tunnel profiles outside this repository.
+Create a local stdio profile using your own runtime API key and Tunnel ID. Use the absolute path to this repository's wrapper as the MCP command:
+
+```bash
+export CONTROL_PLANE_API_KEY="your-runtime-api-key"
+
+/path/to/tunnel-client init \
+  --sample sample_mcp_stdio_local \
+  --profile resource-review \
+  --tunnel-id your-tunnel-id \
+  --mcp-command "/absolute/path/to/resource-review-bridge/scripts/run-resource-review-mcp"
+```
+
+Validate the profile, then start it:
+
+```bash
+/path/to/tunnel-client doctor --profile resource-review --explain
+/path/to/tunnel-client run --profile resource-review
+```
+
+Keep that terminal window open. Run only one copy of the profile at a time. App discovery and calls to `review_resource` depend on the client remaining connected.
+
+### 7. Add the private plugin in ChatGPT
+
+1. Enable Developer mode in ChatGPT under **Settings → Security and login**.
+2. Open **Plugins**, select the plus button, and create a developer-mode plugin.
+3. Set the connection type to **Tunnel**.
+4. Select the tunnel you created, or enter its Tunnel ID if it is not listed.
+5. Name the plugin `Resource Review Bridge` and complete the custom MCP server acknowledgement.
+
+If the tunnel is missing, confirm that it is associated with the target ChatGPT workspace and that your account has Tunnels Read + Use permission.
+
+Test the installation by asking ChatGPT to use `review_resource` on a public URL. A successful response contains a schema-validated Evidence Packet. The first live request may consume the Codex allowance associated with the local Codex session.
+
+### Updating
+
+After pulling a new version, reinstall locked browser dependencies and restart the single running Tunnel process:
+
+```bash
+git pull
+npm install
+```
+
+The wrapper derives the repository location at runtime, creates local state under `work/`, and locates the Codex executable.
 
 ## Configuration
 
