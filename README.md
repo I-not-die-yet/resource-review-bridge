@@ -11,6 +11,12 @@ It is designed for a simple research workflow:
 3. discuss whether the resource is useful;
 4. save it elsewhere only after explicit user approval.
 
+## Why this exists
+
+Public social posts are often awkward for an AI chat to inspect reliably: login reminders obscure otherwise public content, carousels require navigation, and repeated attempts can fill the conversation with duplicated or irrelevant page text. Resource Review Bridge performs bounded acquisition first and sends a compact, structured Evidence Packet into the reasoning step.
+
+The goal is to reduce wasted context and repeated failed attempts, which can improve token efficiency. It does not guarantee lower token use: screenshots, long captions, large carousels, and detailed evidence still consume model context.
+
 ```mermaid
 flowchart LR
     A[ChatGPT plugin] --> B[Secure MCP Tunnel]
@@ -30,6 +36,7 @@ flowchart LR
 - Dismisses non-blocking Instagram Close/X login reminders.
 - Attempts one safe backdrop dismissal for a Threads login overlay.
 - Reads up to 12 carousel items, a bounded visible comment set, and 3 direct outbound pages.
+- Preserves the visible original caption in a dedicated `caption` field without reconstructing missing text.
 - Returns a strict Evidence Packet with claims, evidence IDs, read states, and limitations.
 - Allows one active job, two bounded attempts, idempotent request IDs, and 24-hour local retention.
 - Runs Codex in a read-only sandbox without interactive approvals.

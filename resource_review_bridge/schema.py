@@ -46,6 +46,7 @@ EVIDENCE_PACKET_SCHEMA: Dict[str, Any] = {
             ],
             "additionalProperties": False,
         },
+        "caption": {"type": ["string", "null"]},
         "summary": {"type": "string"},
         "claims": {
             "type": "array",
@@ -78,7 +79,7 @@ EVIDENCE_PACKET_SCHEMA: Dict[str, Any] = {
         },
         "limitations": {"type": "array", "items": {"type": "string"}},
     },
-    "required": ["status", "source", "read_state", "summary", "claims", "evidence", "limitations"],
+    "required": ["status", "source", "read_state", "caption", "summary", "claims", "evidence", "limitations"],
     "additionalProperties": False,
 }
 
@@ -118,6 +119,7 @@ def validate_packet(packet: Any, expected_url: str) -> Dict[str, Any]:
     if any(value not in READ_STATES for value in read_state.values()):
         raise PacketValidationError("invalid read_state value")
 
+    _require_string(packet["caption"], "caption", allow_none=True)
     _require_string(packet["summary"], "summary")
     if not isinstance(packet["limitations"], list) or not all(isinstance(item, str) for item in packet["limitations"]):
         raise PacketValidationError("limitations must be strings")

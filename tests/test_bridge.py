@@ -28,6 +28,7 @@ def packet(url=URL):
             "comments": "completed",
             "outbound_links": "not_applicable",
         },
+        "caption": "Example caption",
         "summary": "Summary",
         "claims": [{"claim": "Claim", "evidence_ids": ["e1"]}],
         "evidence": [{
@@ -117,6 +118,15 @@ class SchemaTests(unittest.TestCase):
         broken["evidence"] = []
         with self.assertRaises(PacketValidationError):
             validate_packet(broken, URL)
+
+    def test_caption_is_explicit_and_may_be_unavailable(self):
+        missing = packet()
+        missing.pop("caption")
+        with self.assertRaises(PacketValidationError):
+            validate_packet(missing, URL)
+        unavailable = packet()
+        unavailable["caption"] = None
+        self.assertIsNone(validate_packet(unavailable, URL)["caption"])
 
     def test_public_example_matches_schema(self):
         example_path = Path(__file__).parent.parent / "examples/evidence-packet.example.json"

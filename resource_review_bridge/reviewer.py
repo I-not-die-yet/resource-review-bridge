@@ -42,6 +42,7 @@ Acquisition rules:
 8. Use status=completed only when original_content is completed. Report every missing or blocked portion in limitations.
 9. Keep evidence concise and assign stable IDs e1, e2, ...; every claim must reference existing evidence IDs.
 10. Preserve the acquisition read states unless the supplied evidence proves a stricter state. Never turn partial or blocked acquisition into completed.
+11. Put the visible original post caption in caption. Use null when no caption is visible or when it cannot be read. Never reconstruct or infer missing caption text.
 
 Browser snapshot:
 {snapshot}
