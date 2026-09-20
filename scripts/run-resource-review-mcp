@@ -1,0 +1,15 @@
+#!/bin/sh
+set -eu
+
+SCRIPT_DIR=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
+PROJECT_DIR=$(dirname -- "$SCRIPT_DIR")
+STATE_PATH=${RESOURCE_REVIEW_STATE_PATH:-"$PROJECT_DIR/work/resource-review-state.sqlite"}
+
+if [ -x "$HOME/Desktop/ChatGPT.app/Contents/Resources/codex" ]; then
+    export RESOURCE_REVIEW_CODEX="$HOME/Desktop/ChatGPT.app/Contents/Resources/codex"
+elif [ -x "/Applications/ChatGPT.app/Contents/Resources/codex" ]; then
+    export RESOURCE_REVIEW_CODEX="/Applications/ChatGPT.app/Contents/Resources/codex"
+fi
+
+cd "$PROJECT_DIR"
+exec /usr/bin/python3 -m resource_review_bridge.server --stdio --state "$STATE_PATH"

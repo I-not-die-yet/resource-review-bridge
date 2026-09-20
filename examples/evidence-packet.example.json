@@ -1,0 +1,34 @@
+{
+  "status": "completed",
+  "source": {
+    "original_url": "https://example.com/public-resource",
+    "canonical_url": "https://example.com/public-resource",
+    "platform": "web"
+  },
+  "read_state": {
+    "auth_prompt": "not_applicable",
+    "original_content": "completed",
+    "carousel": "not_applicable",
+    "comments": "not_applicable",
+    "outbound_links": "not_applicable"
+  },
+  "summary": "The page makes one verifiable public claim.",
+  "claims": [
+    {
+      "claim": "The example resource is publicly accessible.",
+      "evidence_ids": ["e1"]
+    }
+  ],
+  "evidence": [
+    {
+      "id": "e1",
+      "kind": "original_post",
+      "text": "Example evidence captured from the public source.",
+      "url": "https://example.com/public-resource",
+      "author": null,
+      "published_at": null,
+      "importance": "primary"
+    }
+  ],
+  "limitations": []
+}
