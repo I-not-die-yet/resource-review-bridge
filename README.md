@@ -78,7 +78,7 @@ cd resource-review-bridge
 ### 3. Install the browser dependency
 
 ```bash
-npm install
+npm ci
 npx playwright install chromium
 ```
 
@@ -148,11 +148,11 @@ Test the installation by asking ChatGPT to use `review_resource` on a public URL
 
 ### Updating
 
-After pulling a new version, reinstall locked browser dependencies and restart the single running Tunnel process:
+After pulling a new version, reinstall the locked browser dependencies and restart the single running Tunnel process:
 
 ```bash
 git pull
-npm install
+npm ci
 ```
 
 The wrapper derives the repository location at runtime, creates local state under `work/`, and locates the Codex executable.
