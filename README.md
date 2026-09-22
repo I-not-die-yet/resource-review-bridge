@@ -39,6 +39,7 @@ flowchart LR
 - Preserves the visible original caption in a dedicated `caption` field without reconstructing missing text.
 - Returns a strict Evidence Packet with claims, evidence IDs, read states, and limitations.
 - Allows one active job, two bounded attempts, idempotent request IDs, and 24-hour local retention.
+- Reuses completed or partial results across request IDs and original/canonical URL aliases, so a retry can return immediately instead of repeating the browser review.
 - Runs Codex in a read-only sandbox without interactive approvals.
 
 ## Requirements
@@ -146,6 +147,8 @@ If the tunnel is missing, confirm that it is associated with the target ChatGPT 
 
 Test the installation by asking ChatGPT to use `review_resource` on a public URL. A successful response contains a schema-validated Evidence Packet. The first live request may consume the Codex allowance associated with the local Codex session.
 
+In Chat mode, select `Resource Review Bridge` from **Add files and more** before sending the URL. Typing or pasting an `@Resource Review Bridge` mention does not attach the tool. A conversation created before developer MCP support may continue to reject the tool; start a new Chat mode conversation and select the plugin there.
+
 ### Updating
 
 After pulling a new version, reinstall the locked browser dependencies and restart the single running Tunnel process:
@@ -224,6 +227,7 @@ See [SECURITY.md](SECURITY.md) for disclosure guidance and operational limits.
 - Publicly visible comments are bounded and may be incomplete.
 - Evidence generation consumes the user's existing Codex allowance.
 - The current MCP call remains open until completion. There is no durable MCP Apps completion card for calls that outlive the host request.
+- A first-time review can exceed the host request timeout. Once the local review completes, a retry of the original or canonical URL reuses the retained result instead of repeating the work.
 - This project does not bypass authentication, paywalls, CAPTCHAs, or access controls.
 - Users are responsible for following applicable laws and each source site's terms.
 

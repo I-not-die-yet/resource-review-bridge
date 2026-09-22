@@ -191,6 +191,40 @@ class StateAndReviewerTests(unittest.TestCase):
         self.assertIn("Close or X", fake.prompt)
         self.assertIn("backdrop", fake.prompt)
 
+    def test_review_reuses_completed_result_across_request_ids(self):
+        fake = FakeAppServer(packet())
+        reviewer = ResourceReviewer(self.store, fake, cwd=self.temp.name, browser=FakeBrowser())
+        import resource_review_bridge.reviewer as module
+        original_validate = module.validate_public_url
+        module.validate_public_url = lambda value: URL
+        try:
+            first = reviewer.review(URL, "req-first")
+            second = reviewer.review(URL, "req-second")
+        finally:
+            module.validate_public_url = original_validate
+        self.assertEqual(first["status"], "completed")
+        self.assertTrue(second["cached"])
+        self.assertEqual(fake.calls, 1)
+
+    def test_review_reuses_completed_result_by_canonical_url(self):
+        canonical = "https://www.instagram.com/p/canonical/"
+        value = packet()
+        value["source"]["canonical_url"] = canonical
+        fake = FakeAppServer(value)
+        reviewer = ResourceReviewer(self.store, fake, cwd=self.temp.name, browser=FakeBrowser())
+        import resource_review_bridge.reviewer as module
+        original_validate = module.validate_public_url
+        module.validate_public_url = lambda value: value
+        try:
+            first = reviewer.review(URL, "req-original")
+            second = reviewer.review(canonical, "req-canonical")
+        finally:
+            module.validate_public_url = original_validate
+        self.assertEqual(first["status"], "completed")
+        self.assertTrue(second["cached"])
+        self.assertEqual(second["evidence_packet"]["source"]["canonical_url"], canonical)
+        self.assertEqual(fake.calls, 1)
+
     def test_mcp_surface_exposes_only_review_resource(self):
         fake = FakeAppServer(packet())
         reviewer = ResourceReviewer(self.store, fake, cwd=self.temp.name, browser=FakeBrowser())
