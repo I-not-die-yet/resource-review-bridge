@@ -2,6 +2,7 @@ import dns from "node:dns/promises";
 import fs from "node:fs/promises";
 import path from "node:path";
 import { createRequire } from "node:module";
+import { hasOriginalContent, snapshotFingerprint } from "./browser_rules.mjs";
 
 const require = createRequire(import.meta.url);
 const playwrightPath = process.env.RESOURCE_REVIEW_PLAYWRIGHT_PATH || "playwright";
@@ -115,18 +116,35 @@ async function visibleSnapshot(page) {
   }, MAX_TEXT);
 }
 
+async function contentSignals(page) {
+  return page.evaluate(() => ({
+    mainCount: document.querySelectorAll("main").length,
+    articleCount: document.querySelectorAll("article").length,
+    ogDescriptionLength: (document.querySelector('meta[property="og:description"]')?.content || "").trim().length,
+  }));
+}
+
 async function captureCarousel(page) {
   const items = [];
+  const seen = new Set();
+  let duplicateStopped = false;
   for (let index = 0; index < MAX_CAROUSEL_ITEMS; index += 1) {
     const snapshot = await visibleSnapshot(page);
     const imagePath = path.join(outputDirectory, `page-${index + 1}.png`);
-    await page.screenshot({ path: imagePath, fullPage: false }).catch(() => {});
+    const screenshot = await page.screenshot({ path: imagePath, fullPage: false }).catch(() => null);
+    const fingerprint = snapshotFingerprint(snapshot, screenshot);
+    if (seen.has(fingerprint)) {
+      duplicateStopped = true;
+      await fs.unlink(imagePath).catch(() => {});
+      break;
+    }
+    seen.add(fingerprint);
     items.push({ index: index + 1, ...snapshot, screenshot: imagePath });
     const next = page.locator('button[aria-label="Next"], [role="button"][aria-label="Next"], button[aria-label="下一步"], button[aria-label="下一張"]');
     if (!(await clickFirstVisible(next))) break;
     await page.waitForTimeout(700);
   }
-  return { items, bounded: items.length === MAX_CAROUSEL_ITEMS };
+  return { items, bounded: items.length === MAX_CAROUSEL_ITEMS, duplicateStopped };
 }
 
 function outboundCandidates(snapshot, sourceHost) {
@@ -162,6 +180,7 @@ async function main() {
     if (authPrompt === "blocked") limitations.push("A visible authentication overlay could not be dismissed safely.");
     const carousel = await captureCarousel(page);
     if (carousel.bounded) limitations.push(`Carousel inspection stopped at the ${MAX_CAROUSEL_ITEMS}-item limit.`);
+    if (carousel.duplicateStopped) limitations.push("Carousel inspection stopped when the next control did not reveal a new item.");
     const first = carousel.items[0] || { text: "", links: [] };
     const outbound = [];
     for (const link of outboundCandidates(first, source.hostname)) {
@@ -177,7 +196,8 @@ async function main() {
         await linkedPage.close();
       }
     }
-    const originalRead = first.text.trim().length >= 20 ? "completed" : "blocked";
+    const signals = await contentSignals(page);
+    const originalRead = hasOriginalContent(platform, page.url(), first, signals) ? "completed" : "blocked";
     if (originalRead === "blocked") limitations.push("The original page exposed insufficient visible text for review.");
     if (originalRead === "completed") limitations.push("Comments were limited to the important visible set rendered in the public page.");
     const result = {

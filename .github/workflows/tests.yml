@@ -11,10 +11,31 @@ jobs:
   unit-tests:
     runs-on: ubuntu-latest
     timeout-minutes: 5
+    strategy:
+      matrix:
+        python-version: ["3.9", "3.13"]
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with:
-          python-version: "3.11"
+          python-version: ${{ matrix.python-version }}
       - name: Run unit tests
         run: python3 -m unittest discover -s tests -v
+      - name: Smoke-test MCP wrapper
+        env:
+          RESOURCE_REVIEW_STATE_PATH: ${{ runner.temp }}/resource-review-state.sqlite
+        run: |
+          test -x scripts/run-resource-review-mcp
+          printf '%s\n' '{"jsonrpc":"2.0","id":1,"method":"tools/list","params":{}}' | scripts/run-resource-review-mcp | grep 'review_resource'
+
+  browser-checks:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+      - run: npm ci
+      - run: npm run check

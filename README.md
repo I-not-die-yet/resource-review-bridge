@@ -162,6 +162,7 @@ The wrapper derives the repository location at runtime, creates local state unde
 | Variable | Purpose |
 | --- | --- |
 | `RESOURCE_REVIEW_CODEX` | Explicit Codex executable path or command |
+| `RESOURCE_REVIEW_PYTHON` | Explicit Python executable path or command |
 | `RESOURCE_REVIEW_NODE` | Explicit Node.js executable path |
 | `RESOURCE_REVIEW_PLAYWRIGHT_PATH` | Explicit Playwright package directory |
 | `RESOURCE_REVIEW_STATE_PATH` | SQLite state file path |
@@ -205,7 +206,7 @@ This prevents a failed review from permanently blocking later requests as `busy`
 - Downloads, forms, login, likes, comments, follows, and posting are not allowed.
 - Local screenshots and SQLite state may contain source content. They are stored outside version control and should be deleted according to your retention needs.
 - Snapshot text and screenshots are sent to the user's Codex service for Evidence Packet generation. Review only material you are permitted to process this way.
-- The network policy blocks requests to local and private-network addresses before navigation and during browser subrequests.
+- The browser applies public-address checks before navigation and during browser subrequests. Treat these checks as defense in depth, not as a hardened network isolation boundary for hostile URLs.
 
 See [SECURITY.md](SECURITY.md) for disclosure guidance and operational limits.
 
@@ -219,6 +220,7 @@ See [SECURITY.md](SECURITY.md) for disclosure guidance and operational limits.
 ## Known limitations
 
 - Instagram and Threads markup can change without notice.
+- The browser URL checks reduce accidental private-network access but are not a complete defense against hostile DNS infrastructure; use additional network isolation for untrusted arbitrary domains.
 - Publicly visible comments are bounded and may be incomplete.
 - Evidence generation consumes the user's existing Codex allowance.
 - The current MCP call remains open until completion. There is no durable MCP Apps completion card for calls that outlive the host request.

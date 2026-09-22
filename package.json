@@ -4,6 +4,9 @@
   "private": true,
   "description": "Local Playwright dependency for Resource Review Bridge",
   "license": "MIT",
+  "scripts": {
+    "check": "node --check resource_review_bridge/browser_acquire.mjs && node --test tests/*.test.mjs"
+  },
   "dependencies": {
     "playwright": "1.62.1"
   }
